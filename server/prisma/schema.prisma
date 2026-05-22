@@ -12,4 +12,14 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+
+  rooms     Room[]
+}
+model Room {
+  id          Int      @id @default(autoincrement())
+  roomName    String
+  hostId      Int
+  createdAt   DateTime @default(now())
+
+  host User @relation(fields: [hostId], references: [id])
 }
