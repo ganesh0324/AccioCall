@@ -1,0 +1,79 @@
+.app-shell {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  box-sizing: border-box;
+}
+
+.room-panel {
+  width: min(100%, 560px);
+  text-align: left;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.join-row {
+  display: flex;
+  gap: 10px;
+  margin: 24px 0;
+}
+
+.join-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-h);
+  background: var(--input-bg);
+  font: inherit;
+  padding: 12px 14px;
+}
+
+.join-row input:focus {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent-bg);
+}
+
+.join-row button {
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--button-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0 20px;
+}
+
+.message-list {
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.message-list p {
+  border-bottom: 1px solid var(--border);
+  color: var(--text-h);
+  padding: 12px 0;
+}
+
+.message-list .empty-state {
+  color: var(--text);
+}
+
+@media (max-width: 520px) {
+  .join-row {
+    flex-direction: column;
+  }
+
+  .join-row button {
+    min-height: 48px;
+  }
+}

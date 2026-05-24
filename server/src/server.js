@@ -1,16 +1,6 @@
 require("dotenv").config();
-const app = require("./app");
-
-
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`ACCIOCALL API is running on port ${PORT}`)
-
-});require("dotenv").config();
 
 const http = require("http");
-
 const { Server } = require("socket.io");
 
 const app = require("./app");
@@ -19,41 +9,113 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "*"
-  }
+    origin: [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://192.168.1.89:5173",
+      "http://localhost:5174",
+      "http://127.0.0.1:5174",
+      
+    ],
+    methods: ["GET", "POST"],
+  },
 });
 
 
-// SOCKET CONNECTION
+const rooms = {};
+
+
 io.on("connection", (socket) => {
 
   console.log("User connected:", socket.id);
 
-  // join room
+
+  // JOIN ROOM
   socket.on("join-room", (roomName) => {
 
     socket.join(roomName);
 
+    if (!rooms[roomName]) {
+      rooms[roomName] = [];
+    }
+
+    rooms[roomName].push(socket.id);
+
     console.log(`${socket.id} joined ${roomName}`);
 
-    // notify everyone in room
-    io.to(roomName).emit(
+    const otherUsers =
+      rooms[roomName].filter(
+        (id) => id !== socket.id
+      );
+
+    socket.emit("all-users", otherUsers);
+
+    socket.to(roomName).emit(
       "user-joined",
-      `${socket.id} joined room`
+      socket.id
     );
   });
 
-  // disconnect
+
+
+
+  // OFFER
+  socket.on("offer", (data) => {
+
+    io.to(data.target).emit("offer", {
+      offer: data.offer,
+      sender: socket.id
+    });
+  });
+
+
+
+
+  // ANSWER
+  socket.on("answer", (data) => {
+
+    io.to(data.target).emit("answer", {
+      answer: data.answer,
+      sender: socket.id
+    });
+  });
+
+
+
+
+  // ICE CANDIDATE
+  socket.on("ice-candidate", (data) => {
+
+    io.to(data.target).emit(
+      "ice-candidate",
+      {
+        candidate: data.candidate,
+        sender: socket.id
+      }
+    );
+  });
+
+
+
+
+  // DISCONNECT
   socket.on("disconnect", () => {
 
     console.log("User disconnected:", socket.id);
+
+    for (const roomName in rooms) {
+
+      rooms[roomName] =
+        rooms[roomName].filter(
+          (id) => id !== socket.id
+        );
+    }
   });
 });
 
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
