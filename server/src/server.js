@@ -24,6 +24,22 @@ const io = new Server(server, {
 
 const rooms = {};
 
+const removeSocketFromRoom = (socket, roomName) => {
+  if (!rooms[roomName]) return;
+
+  rooms[roomName] =
+    rooms[roomName].filter(
+      (id) => id !== socket.id
+    );
+
+  socket.leave(roomName);
+  socket.to(roomName).emit("user-left", socket.id);
+
+  if (rooms[roomName].length === 0) {
+    delete rooms[roomName];
+  }
+};
+
 
 io.on("connection", (socket) => {
 
@@ -33,13 +49,17 @@ io.on("connection", (socket) => {
   // JOIN ROOM
   socket.on("join-room", (roomName) => {
 
+    if (!roomName) return;
+
     socket.join(roomName);
 
     if (!rooms[roomName]) {
       rooms[roomName] = [];
     }
 
-    rooms[roomName].push(socket.id);
+    if (!rooms[roomName].includes(socket.id)) {
+      rooms[roomName].push(socket.id);
+    }
 
     console.log(`${socket.id} joined ${roomName}`);
 
@@ -54,6 +74,13 @@ io.on("connection", (socket) => {
       "user-joined",
       socket.id
     );
+  });
+
+
+  // LEAVE ROOM
+  socket.on("leave-room", (roomName) => {
+
+    removeSocketFromRoom(socket, roomName);
   });
 
 
@@ -105,10 +132,7 @@ io.on("connection", (socket) => {
 
     for (const roomName in rooms) {
 
-      rooms[roomName] =
-        rooms[roomName].filter(
-          (id) => id !== socket.id
-        );
+      removeSocketFromRoom(socket, roomName);
     }
   });
 });
