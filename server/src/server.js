@@ -15,6 +15,7 @@ const io = new Server(server, {
       "http://192.168.1.89:5173",
       "http://localhost:5174",
       "http://127.0.0.1:5174",
+      // "https://0707-2400-74e0-0-dbdf-a2c7-c73f-f256-fa.ngrok-free.app"
       
     ],
     methods: ["GET", "POST"],
