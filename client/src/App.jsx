@@ -37,6 +37,7 @@ function App() {
   const peerConnection = useRef(null);
   const socketRef = useRef(null);
   const activeRoomRef = useRef("");
+  const joinedNameRef = useRef("");
 
   const isLoggedIn = Boolean(token);
   const isInRoom = Boolean(activeRoom);
@@ -116,7 +117,7 @@ function App() {
         remoteVideoRef.current.srcObject = event.streams[0];
       }
       setRemoteActive(true);
-      setCallStatus(`Connected with ${remoteName || "another participant"}`);
+      setCallStatus("Connected");
     };
 
     connection.onicecandidate = (event) => {
@@ -129,7 +130,7 @@ function App() {
     };
 
     peerConnection.current = connection;
-  }, [closePeerConnection, remoteName]);
+  }, [closePeerConnection]);
 
   const handleAllUsers = useCallback(
     async (users) => {
@@ -151,19 +152,10 @@ function App() {
     [createPeerConnection],
   );
 
-  const handleUserJoined = useCallback(
-    async (data) => {
-      setCallStatus(`${data.name || "Participant"} joined`);
-      setRemoteName(data.name || "Participant");
-      createPeerConnection(data.id);
-
-      const offer = await peerConnection.current.createOffer();
-      await peerConnection.current.setLocalDescription(offer);
-
-      socketRef.current?.emit("offer", { target: data.id, offer });
-    },
-    [createPeerConnection],
-  );
+  const handleUserJoined = useCallback((data) => {
+    setCallStatus(`${data.name || "Participant"} joined`);
+    setRemoteName(data.name || "Participant");
+  }, []);
 
   const handleReceiveOffer = useCallback(
     async (data) => {
@@ -233,6 +225,14 @@ function App() {
     socket.on("offer", handleReceiveOffer);
     socket.on("answer", handleReceiveAnswer);
     socket.on("ice-candidate", handleNewIceCandidate);
+    socket.io.on("reconnect", () => {
+      if (activeRoomRef.current) {
+        socket.emit("join-room", {
+          roomName: activeRoomRef.current,
+          name: joinedNameRef.current,
+        });
+      }
+    });
 
     return () => {
       socket.off("all-users", handleAllUsers);
@@ -334,6 +334,7 @@ function App() {
       }
 
       activeRoomRef.current = nextRoom;
+      joinedNameRef.current = user?.fullName || "Participant";
       setActiveRoom(nextRoom);
       socketRef.current?.emit("join-room", {
         roomName: nextRoom,
