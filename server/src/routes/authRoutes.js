@@ -15,3 +15,4 @@ router.get('/rooms', protect, getRooms);
 router.delete('/rooms/:id', protect, deleteRoom);
 
 module.exports = router;
+// code for auth routes, including user registration, login, logout, and room management (create, get, delete)

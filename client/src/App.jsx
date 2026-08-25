@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL || API_URL.replace(/\/api\/?$/, "");
+const API_URL = import.meta.env.VITE_API_URL || "/api";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || window.location.origin;
 const TOKEN_KEY = "acciocall_token";
 
 function App() {
