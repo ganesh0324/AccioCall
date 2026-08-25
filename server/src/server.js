@@ -26,6 +26,8 @@ const io = new Server(server, {
 
 const rooms = {};
 
+const participantNames = {};
+
 const removeSocketFromRoom = (socket, roomName) => {
   if (!rooms[roomName]) return;
 
@@ -49,11 +51,13 @@ io.on("connection", (socket) => {
 
 
   // JOIN ROOM
-  socket.on("join-room", (roomName) => {
+  socket.on("join-room", ({ roomName, name } = {}) => {
 
     if (!roomName) return;
 
     socket.join(roomName);
+
+    participantNames[socket.id] = name || "Participant";
 
     if (!rooms[roomName]) {
       rooms[roomName] = [];
@@ -63,18 +67,24 @@ io.on("connection", (socket) => {
       rooms[roomName].push(socket.id);
     }
 
-    console.log(`${socket.id} joined ${roomName}`);
+    console.log(`${participantNames[socket.id]} (${socket.id}) joined ${roomName}`);
 
     const otherUsers =
-      rooms[roomName].filter(
-        (id) => id !== socket.id
-      );
+      rooms[roomName]
+        .filter((id) => id !== socket.id)
+        .map((id) => ({
+          id,
+          name: participantNames[id],
+        }));
 
     socket.emit("all-users", otherUsers);
 
     socket.to(roomName).emit(
       "user-joined",
-      socket.id
+      {
+        id: socket.id,
+        name: participantNames[socket.id],
+      }
     );
   });
 
@@ -136,6 +146,8 @@ io.on("connection", (socket) => {
 
       removeSocketFromRoom(socket, roomName);
     }
+
+    delete participantNames[socket.id];
   });
 });
 

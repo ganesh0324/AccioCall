@@ -5,7 +5,11 @@ const jwt = require("jsonwebtoken");
 
 const registerUSER = async (req, res) => {
     // Registration logic here  
-    const { email, password } = req.body;
+    const { email, password, fullName } = req.body;
+
+    if (!email || !password || !fullName) {
+        return res.status(400).json({ message: "Full name, email and password are required" });
+    }
     
     try {
         // Check if user already exists
@@ -22,6 +26,7 @@ const registerUSER = async (req, res) => {
             data: {
                 email,
                 password: hashedPassword,
+                fullName,
             },
         });
         res.status(201).json({"message": "User registered successfully", "user": newUser });
@@ -50,7 +55,10 @@ const loginUSER = async (req, res) => {
         }
         // Generate JWT token
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.json({ token });
+        res.json({
+            token,
+            user: { id: user.id, email: user.email, fullName: user.fullName },
+        });
 
     } catch (error) {
         console.error("Error logging in user:", error);
@@ -71,7 +79,21 @@ const logoutUSER = async (req, res) => {
 };
 
 const getMe = async (req, res) => {
-res.status(200).json({ user: req.user });  
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.userId },
+            select: { id: true, email: true, fullName: true, createdAt: true },
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ user });
+    } catch (error) {
+        console.error("Error fetching user:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
 };
 
 module.exports = {registerUSER, loginUSER, logoutUSER, getMe};
