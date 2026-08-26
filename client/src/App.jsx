@@ -22,7 +22,7 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
-  const [roomName, setRoomName] = useState("demo-room");
+  const [roomName, setRoomName] = useState("");
   const [activeRoom, setActiveRoom] = useState("");
   const [callStatus, setCallStatus] = useState("Standby");
   const [isJoining, setIsJoining] = useState(false);
@@ -462,10 +462,8 @@ function App() {
               <span className="h-3 w-3 rounded-full bg-amber-400" />
             </span>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-amber-400">
-                AccioCall
-              </p>
-              <h1 className="text-xl font-bold">Video room</h1>
+              <h1 className="text-xl font-bold text-amber-400">AccioCall</h1>
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-zinc-400">Video room</p>
             </div>
           </div>
           <button
@@ -481,7 +479,7 @@ function App() {
       <section className="mx-auto grid max-w-7xl gap-5 px-5 py-6 lg:grid-cols-[320px_1fr]">
         <aside className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
           <form className="p-5" onSubmit={joinRoom}>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-400">
               Room
             </p>
             <label className="mt-4 flex h-12 items-center gap-3 rounded-lg border border-zinc-700 bg-zinc-950 px-4">
@@ -490,7 +488,7 @@ function App() {
                 className="h-full w-full bg-transparent font-mono text-sm text-white outline-none placeholder:text-zinc-600"
                 disabled={isInRoom}
                 onChange={(event) => setRoomName(event.target.value)}
-                placeholder="demo-room"
+                placeholder="room-name"
                 value={roomName}
               />
             </label>
@@ -515,7 +513,7 @@ function App() {
           </form>
 
           <div className="border-t border-zinc-800 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-400">
               Status
             </p>
             <p className="mt-3 flex items-center gap-2.5 text-lg font-bold">
