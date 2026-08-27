@@ -353,9 +353,7 @@ function App() {
   if (!isLoggedIn) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-5 py-8 text-white">
-        <h1 className="mb-8 text-4xl font-bold tracking-tight text-white md:text-5xl">
-          AccioCall
-        </h1>
+        <img src="/Print.svg" alt="AccioCall logo" className="mb-8 h-20 w-auto object-contain md:h-24" />
 
         <form
           className="w-full max-w-md rounded-lg border border-white/10 bg-white p-6 text-zinc-950 shadow-2xl"
@@ -458,8 +456,8 @@ function App() {
       <header className="border-b border-zinc-800 bg-zinc-950">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900">
-              <span className="h-3 w-3 rounded-full bg-amber-400" />
+            <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+              <img src="/Print.svg" alt="AccioCall logo" className="h-full w-full object-contain" />
             </span>
             <div>
               <h1 className="text-xl font-bold text-amber-400">AccioCall</h1>
