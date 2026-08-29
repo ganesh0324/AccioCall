@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUSER, loginUSER, logoutUSER, getMe, changePassword} = require('../controllers/authController');
+const { registerUSER, loginUSER, logoutUSER, getMe, changePassword, forgotPassword, resetPassword} = require('../controllers/authController');
 const { createRoom, getRooms, deleteRoom } = require('../controllers/roomController');
 const router = express.Router();
 const { protect }= require('../middleware/authMiddleware');
@@ -11,6 +11,8 @@ router.post('/login', loginUSER);
 router.post('/logout', logoutUSER);
 router.get('/me', protect, getMe);
 router.post('/change-password', protect, changePassword);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 router.post('/rooms', protect, createRoom);
 router.get('/rooms', protect, getRooms);
 router.delete('/rooms/:id', protect, deleteRoom);

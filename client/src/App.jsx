@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import AdminPanel from "./AdminPanel";
 import ChangePasswordModal from "./ChangePasswordModal";
+import ResetPasswordForm from "./ResetPasswordForm";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || window.location.origin;
@@ -17,7 +18,13 @@ function formatClock(totalSeconds) {
 function App() {
   const [view, setView] = useState("room");
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [resetToken, setResetToken] = useState(() =>
+    new URLSearchParams(window.location.search).get("resetToken"),
+  );
   const [authMode, setAuthMode] = useState("login");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotStatus, setForgotStatus] = useState("");
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -300,6 +307,29 @@ function App() {
     }
   };
 
+  const handleForgotPassword = async (event) => {
+    event.preventDefault();
+    setForgotStatus("");
+    setIsForgotLoading(true);
+
+    try {
+      const data = await apiRequest("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      setForgotStatus(data.message);
+    } catch (error) {
+      setForgotStatus(error.message);
+    } finally {
+      setIsForgotLoading(false);
+    }
+  };
+
+  const clearResetToken = () => {
+    setResetToken(null);
+    window.history.replaceState({}, "", window.location.pathname);
+  };
+
   const logout = () => {
     leaveRoom();
     localStorage.removeItem(TOKEN_KEY);
@@ -355,7 +385,68 @@ function App() {
     }
   };
 
+  if (resetToken) {
+    return (
+      <ResetPasswordForm apiRequest={apiRequest} onDone={clearResetToken} token={resetToken} />
+    );
+  }
+
   if (!isLoggedIn) {
+    if (authMode === "forgot") {
+      return (
+        <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-5 py-8 text-white">
+          <img src="/Print.png" alt="AccioCall logo" className="mb-8 h-20 w-auto object-contain md:h-24" />
+
+          <form
+            className="w-full max-w-md rounded-lg border border-white/10 bg-white p-6 text-zinc-950 shadow-2xl"
+            onSubmit={handleForgotPassword}
+          >
+            <h2 className="text-2xl font-bold">Reset your password</h2>
+            <p className="mt-2 text-sm text-zinc-600">
+              Enter your account email and we'll send you a reset link.
+            </p>
+
+            <label className="mt-6 block text-sm font-semibold text-zinc-700">
+              Email
+              <input
+                className="mt-2 h-12 w-full rounded-lg border border-zinc-200 px-4 text-base outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                onChange={(event) => setForgotEmail(event.target.value)}
+                placeholder="you@example.com"
+                required
+                type="email"
+                value={forgotEmail}
+              />
+            </label>
+
+            {forgotStatus && (
+              <p className="mt-4 rounded-lg bg-zinc-50 px-4 py-3 text-sm font-semibold text-zinc-700">
+                {forgotStatus}
+              </p>
+            )}
+
+            <button
+              className="mt-6 h-12 w-full rounded-lg bg-cyan-600 font-bold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-zinc-300"
+              disabled={isForgotLoading}
+              type="submit"
+            >
+              {isForgotLoading ? "Sending..." : "Send reset link"}
+            </button>
+
+            <button
+              className="mt-4 w-full text-center text-sm font-semibold text-zinc-500 transition hover:text-zinc-800"
+              onClick={() => {
+                setAuthMode("login");
+                setForgotStatus("");
+              }}
+              type="button"
+            >
+              Back to login
+            </button>
+          </form>
+        </main>
+      );
+    }
+
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-5 py-8 text-white">
         <img src="/Print.png" alt="AccioCall logo" className="mb-8 h-20 w-auto object-contain md:h-24" />
@@ -433,6 +524,19 @@ function App() {
                 value={password}
               />
             </label>
+
+            {authMode === "login" && (
+              <button
+                className="mt-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-600"
+                onClick={() => {
+                  setAuthMode("forgot");
+                  setAuthError("");
+                }}
+                type="button"
+              >
+                Forgot password?
+              </button>
+            )}
 
             {authError && (
               <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">

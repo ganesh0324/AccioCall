@@ -11,6 +11,7 @@ Hogwarts is calling you! A full-stack video calling app — sign in, pick a room
 - **Clean lifecycle** — media tracks stop and peer connections close on leave/logout
 - **Admin portal** — role-gated screen to view/manage every user and room
 - **Change password** — self-service password change from the header, current-password verified server-side
+- **Forgot password** — email a time-limited reset link, no account enumeration
 
 ## Tech Stack
 
@@ -31,6 +32,7 @@ AccioCall/
 │       ├── App.jsx        # Auth UI, room UI, WebRTC peer logic
 │       ├── AdminPanel.jsx # Admin-only users/rooms management screen
 │       ├── ChangePasswordModal.jsx
+│       ├── ResetPasswordForm.jsx
 │       └── main.jsx
 └── server/                # Express API + Socket.IO signaling
     ├── prisma/
@@ -61,7 +63,23 @@ AccioCall/
 DATABASE_URL="postgresql://user:password@localhost:5432/acciocall"
 JWT_SECRET="your-secret"
 PORT=5000
+
+# Used to build the link inside password-reset emails
+CLIENT_URL="http://localhost:5173"
+
+# SMTP — required for "forgot password" to actually send an email.
+# Example for Gmail: host smtp.gmail.com, port 587, secure false,
+# user your Gmail address, pass a 16-character Google "App Password"
+# (not your normal password — https://myaccount.google.com/apppasswords)
+SMTP_HOST=""
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER=""
+SMTP_PASS=""
+SMTP_FROM=""
 ```
+
+Without SMTP configured, "forgot password" still works end-to-end (the reset token is generated and stored), it just can't deliver the email — the request fails silently server-side and the API still returns its normal generic response either way.
 
 **`client/.env`** (optional — falls back to Vite's dev proxy when omitted)
 
@@ -110,6 +128,8 @@ Base URL: `/api/auth`
 | POST   | `/logout`    | Public | Logout                 |
 | GET    | `/me`        | JWT    | Current user profile   |
 | POST   | `/change-password` | JWT | Change your own password — body `{ currentPassword, newPassword }` |
+| POST   | `/forgot-password` | Public | Email a reset link if the address has an account — body `{ email }` |
+| POST   | `/reset-password` | Public | Consume a reset token — body `{ token, newPassword }` |
 | POST   | `/rooms`     | JWT    | Create a room          |
 | GET    | `/rooms`     | JWT    | List rooms             |
 | DELETE | `/rooms/:id` | JWT    | Delete a room (owner only) |
@@ -159,3 +179,11 @@ npm run admin:role -- someone@example.com ADMIN
 ```
 
 They'll see the **Admin** button next time they refresh (or immediately, if they're already logged in — the role check is live, not cached in their token).
+
+## Forgot Password
+
+From the login screen, "Forgot password?" asks for an email and calls `/api/auth/forgot-password`. If an account exists for it, the server generates a random token, stores its SHA-256 hash with a 30-minute expiry on the `User` row, and emails a link like `http://localhost:5173/?resetToken=<token>` (built from `CLIENT_URL`). The response is identical whether or not the email exists, so the endpoint can't be used to check which emails are registered.
+
+Opening that link loads the app straight into a "choose a new password" screen (`ResetPasswordForm.jsx`), which posts the token + new password to `/api/auth/reset-password`. The server re-hashes the token, checks it matches and hasn't expired, updates the password, and clears the token — so it's single-use.
+
+Nothing here works without SMTP configured (see step 1) — until then, tokens are still generated and stored correctly, but no email actually goes out.
