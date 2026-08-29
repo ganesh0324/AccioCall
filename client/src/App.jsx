@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import AdminPanel from "./AdminPanel";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || window.location.origin;
@@ -15,6 +16,7 @@ function formatClock(totalSeconds) {
 
 function App() {
   const [view, setView] = useState("room");
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -504,6 +506,13 @@ function App() {
             )}
             <button
               className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-zinc-800"
+              onClick={() => setIsChangePasswordOpen(true)}
+              type="button"
+            >
+              Change password
+            </button>
+            <button
+              className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-zinc-800"
               onClick={logout}
               type="button"
             >
@@ -512,6 +521,13 @@ function App() {
           </div>
         </div>
       </header>
+
+      {isChangePasswordOpen && (
+        <ChangePasswordModal
+          apiRequest={apiRequest}
+          onClose={() => setIsChangePasswordOpen(false)}
+        />
+      )}
 
       <section className="mx-auto grid max-w-7xl gap-6 px-5 py-8 lg:grid-cols-[340px_1fr]">
         <aside className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_24px_48px_-28px_rgba(0,0,0,0.65)]">

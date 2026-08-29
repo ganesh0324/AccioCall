@@ -97,6 +97,46 @@ const getMe = async (req, res) => {
     }
 };
 
-module.exports = {registerUSER, loginUSER, logoutUSER, getMe};
+const changePassword = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+        return res.status(400).json({ message: "New password must be at least 6 characters" });
+    }
+
+    try {
+        const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const isCurrentValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isCurrentValid) {
+            return res.status(400).json({ message: "Current password is incorrect" });
+        }
+
+        const isSameAsOld = await bcrypt.compare(newPassword, user.password);
+        if (isSameAsOld) {
+            return res.status(400).json({ message: "New password must be different from the current one" });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashedPassword },
+        });
+
+        res.status(200).json({ message: "Password updated successfully" });
+    } catch (error) {
+        console.error("Error changing password:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+module.exports = {registerUSER, loginUSER, logoutUSER, getMe, changePassword};
 
 

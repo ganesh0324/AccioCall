@@ -10,6 +10,7 @@ Hogwarts is calling you! A full-stack video calling app — sign in, pick a room
 - **Reconnect-safe signaling** — the client rejoins its active room automatically after a socket reconnect
 - **Clean lifecycle** — media tracks stop and peer connections close on leave/logout
 - **Admin portal** — role-gated screen to view/manage every user and room
+- **Change password** — self-service password change from the header, current-password verified server-side
 
 ## Tech Stack
 
@@ -29,6 +30,7 @@ AccioCall/
 │   └── src/
 │       ├── App.jsx        # Auth UI, room UI, WebRTC peer logic
 │       ├── AdminPanel.jsx # Admin-only users/rooms management screen
+│       ├── ChangePasswordModal.jsx
 │       └── main.jsx
 └── server/                # Express API + Socket.IO signaling
     ├── prisma/
@@ -107,6 +109,7 @@ Base URL: `/api/auth`
 | POST   | `/login`     | Public | Login, returns JWT     |
 | POST   | `/logout`    | Public | Logout                 |
 | GET    | `/me`        | JWT    | Current user profile   |
+| POST   | `/change-password` | JWT | Change your own password — body `{ currentPassword, newPassword }` |
 | POST   | `/rooms`     | JWT    | Create a room          |
 | GET    | `/rooms`     | JWT    | List rooms             |
 | DELETE | `/rooms/:id` | JWT    | Delete a room (owner only) |
