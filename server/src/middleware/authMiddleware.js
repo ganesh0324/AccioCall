@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const prisma = require("../config/db");
 
 const protect = (req, res, next) => {
     try{
@@ -28,4 +29,24 @@ const protect = (req, res, next) => {
 
 };
 
-module.exports = {protect} ;
+// Checks the CURRENT role in the database (not a claim baked into the JWT),
+// so promoting/demoting an admin takes effect immediately, not on next login.
+const requireAdmin = async (req, res, next) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.userId },
+            select: { role: true },
+        });
+
+        if (!user || user.role !== "ADMIN") {
+            return res.status(403).json({ message: "Admin access required" });
+        }
+
+        next();
+    } catch (error) {
+        console.error("Error checking admin role:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+module.exports = {protect, requireAdmin} ;

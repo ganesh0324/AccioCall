@@ -9,6 +9,7 @@ Hogwarts is calling you! A full-stack video calling app — sign in, pick a room
 - **WebRTC video calls** — direct peer-to-peer audio/video between two participants
 - **Reconnect-safe signaling** — the client rejoins its active room automatically after a socket reconnect
 - **Clean lifecycle** — media tracks stop and peer connections close on leave/logout
+- **Admin portal** — role-gated screen to view/manage every user and room
 
 ## Tech Stack
 
@@ -27,17 +28,20 @@ AccioCall/
 ├── client/                # React + Vite frontend
 │   └── src/
 │       ├── App.jsx        # Auth UI, room UI, WebRTC peer logic
+│       ├── AdminPanel.jsx # Admin-only users/rooms management screen
 │       └── main.jsx
 └── server/                # Express API + Socket.IO signaling
     ├── prisma/
     │   └── schema.prisma  # User & Room models
+    ├── scripts/
+    │   └── setAdminRole.js # CLI helper to promote/demote a user
     └── src/
         ├── app.js         # Express app + routes mounting
         ├── server.js      # HTTP + Socket.IO signaling server
-        ├── controllers/   # authController, roomController
-        ├── middleware/    # JWT protect middleware
+        ├── controllers/   # authController, roomController, adminController
+        ├── middleware/    # JWT protect + requireAdmin middleware
         ├── config/        # Prisma client
-        └── routes/        # authRoutes (auth + rooms)
+        └── routes/        # authRoutes, roomRoutes, adminRoutes
 ```
 
 ## Getting Started
@@ -107,6 +111,18 @@ Base URL: `/api/auth`
 | GET    | `/rooms`     | JWT    | List rooms             |
 | DELETE | `/rooms/:id` | JWT    | Delete a room (owner only) |
 
+Base URL: `/api/admin` — every route below requires a valid JWT **and** the caller's current role in the database to be `ADMIN` (checked fresh on each request, not cached in the token).
+
+| Method | Endpoint          | Description                              |
+| ------ | ----------------- | ----------------------------------------- |
+| GET    | `/users`          | List every user (no password hashes)     |
+| PATCH  | `/users/:id/role` | Set a user's role — body `{ "role": "ADMIN" \| "USER" }` |
+| DELETE | `/users/:id`      | Delete a user (and their rooms)          |
+| GET    | `/rooms`          | List every room, with its host           |
+| DELETE | `/rooms/:id`      | Delete any room, regardless of host      |
+
+An admin can't demote or delete their own account through these routes — that's blocked server-side to avoid locking yourself out.
+
 ## Socket Events
 
 | Event                                 | Direction         | Payload                    |
@@ -127,3 +143,16 @@ Base URL: `/api/auth`
 5. On leave/disconnect, the server cleans up room membership and peers reset their streams.
 
 > Note: currently limited to one-to-one calls (the first participant in the room is connected). Uses Google's public STUN server for NAT traversal.
+
+## Admin Portal
+
+Every user has a `role` (`USER` by default, or `ADMIN`) on the `User` model. A logged-in admin sees an **Admin** button in the header, which opens a screen listing every user and every room, with actions to promote/demote a user, or delete a user or room.
+
+There's no admin account by default, and the admin API itself requires an existing admin to call it — so the first one has to be granted from the server:
+
+```bash
+cd server
+npm run admin:role -- someone@example.com ADMIN
+```
+
+They'll see the **Admin** button next time they refresh (or immediately, if they're already logged in — the role check is live, not cached in their token).

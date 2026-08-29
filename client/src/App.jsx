@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import AdminPanel from "./AdminPanel";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || window.location.origin;
@@ -13,6 +14,7 @@ function formatClock(totalSeconds) {
 }
 
 function App() {
+  const [view, setView] = useState("room");
   const [authMode, setAuthMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -301,6 +303,7 @@ function App() {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
+    setView("room");
     setEmail("");
     setPassword("");
     setFullName("");
@@ -453,6 +456,17 @@ function App() {
 
   const isConnected = callStatus.startsWith("Connected");
 
+  if (view === "admin" && user?.role === "ADMIN") {
+    return (
+      <AdminPanel
+        apiRequest={apiRequest}
+        currentUserId={user.id}
+        onBack={() => setView("room")}
+        onLogout={logout}
+      />
+    );
+  }
+
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
       <header className="relative overflow-hidden border-b border-zinc-800 bg-zinc-950/90">
@@ -479,6 +493,15 @@ function App() {
                 {isConnected ? "Stable connection" : "Standby"}
               </span>
             </div>
+            {user?.role === "ADMIN" && (
+              <button
+                className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-400 transition hover:bg-amber-400/20"
+                onClick={() => setView("admin")}
+                type="button"
+              >
+                Admin
+              </button>
+            )}
             <button
               className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-zinc-800"
               onClick={logout}

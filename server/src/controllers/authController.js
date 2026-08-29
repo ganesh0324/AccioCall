@@ -57,7 +57,7 @@ const loginUSER = async (req, res) => {
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.json({
             token,
-            user: { id: user.id, email: user.email, fullName: user.fullName },
+            user: { id: user.id, email: user.email, fullName: user.fullName, role: user.role },
         });
 
     } catch (error) {
@@ -82,7 +82,7 @@ const getMe = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.user.userId },
-            select: { id: true, email: true, fullName: true, createdAt: true },
+            select: { id: true, email: true, fullName: true, role: true, createdAt: true },
         });
 
         if (!user) {
