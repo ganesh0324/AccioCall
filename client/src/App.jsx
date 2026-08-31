@@ -708,10 +708,6 @@ function App() {
                 Room · {activeRoom}
               </p>
             )}
-            <div className="mt-5 flex items-center justify-between border-t border-dashed border-zinc-800 pt-3.5 font-mono text-[11px] text-zinc-500">
-              <span className="uppercase tracking-[0.1em]">On air</span>
-              <span>{formatClock(elapsed)}</span>
-            </div>
           </div>
         </aside>
 
