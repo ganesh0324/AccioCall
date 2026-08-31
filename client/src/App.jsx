@@ -8,6 +8,27 @@ const API_URL = import.meta.env.VITE_API_URL || "/api";
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || window.location.origin;
 const TOKEN_KEY = "acciocall_token";
 
+// STUN alone only gets peers connected directly, which works on shared/simple
+// networks. Calls across different networks (mobile data, CGNAT, restrictive
+// firewalls) often need a TURN relay. Short-lived TURN credentials are minted
+// server-side (see server/src/controllers/turnController.js) and fetched here
+// right before each call, so the TURN account secret never reaches the browser.
+const DEFAULT_ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
+
+async function fetchIceServers(token) {
+  try {
+    const response = await fetch(`${API_URL}/turn/credentials`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error(`TURN credentials request failed: ${response.status}`);
+    const { iceServers } = await response.json();
+    return iceServers?.length ? iceServers : DEFAULT_ICE_SERVERS;
+  } catch (error) {
+    console.warn("Falling back to STUN-only (couldn't fetch TURN credentials):", error);
+    return DEFAULT_ICE_SERVERS;
+  }
+}
+
 function formatClock(totalSeconds) {
   const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
   const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
@@ -112,12 +133,11 @@ function App() {
     setCallStatus("You left the call");
   }, [closePeerConnection, stopMedia]);
 
-  const createPeerConnection = useCallback((targetSocketId) => {
+  const createPeerConnection = useCallback(async (targetSocketId) => {
     closePeerConnection();
 
-    const connection = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-    });
+    const iceServers = await fetchIceServers(token);
+    const connection = new RTCPeerConnection({ iceServers });
 
     localStream.current?.getTracks().forEach((track) => {
       connection.addTrack(track, localStream.current);
@@ -141,7 +161,7 @@ function App() {
     };
 
     peerConnection.current = connection;
-  }, [closePeerConnection]);
+  }, [closePeerConnection, token]);
 
   const handleAllUsers = useCallback(
     async (users) => {
@@ -152,7 +172,7 @@ function App() {
 
       const target = users[0];
       setRemoteName(target.name || "Participant");
-      createPeerConnection(target.id);
+      await createPeerConnection(target.id);
 
       const offer = await peerConnection.current.createOffer();
       await peerConnection.current.setLocalDescription(offer);
@@ -170,7 +190,7 @@ function App() {
 
   const handleReceiveOffer = useCallback(
     async (data) => {
-      createPeerConnection(data.sender);
+      await createPeerConnection(data.sender);
 
       await peerConnection.current.setRemoteDescription(
         new RTCSessionDescription(data.offer),

@@ -4,6 +4,7 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const roomRoutes = require("./routes/roomRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const turnRoutes = require("./routes/turnRoutes");
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/turn", turnRoutes);
 
 app.get("/", (req, res) => {
   res.send("ACCIOCALL API is running!");

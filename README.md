@@ -167,6 +167,18 @@ An admin can't demote or delete their own account through these routes — that'
 
 > Note: currently limited to one-to-one calls (the first participant in the room is connected). Uses Google's public STUN server for NAT traversal.
 
+### Calling across different networks (TURN)
+
+STUN alone (the default) lets two peers connect directly, which works when both are on the same or simply-NAT'd networks. Once callers are on different networks — home WiFi to mobile data, behind a restrictive/corporate firewall, or CGNAT — a direct connection often can't be established and calls need a **TURN** relay instead.
+
+This app gets TURN credentials from [Metered.ca](https://www.metered.ca)'s TURN Server product via a small backend endpoint (`GET /api/turn/credentials`, auth-protected):
+
+1. Sign up for Metered's TURN Server (free tier is enough for a project this size), go to TURN Server → **TURN Credentials**, and add a credential — it gives you a username/password pair (this pair is meant to be given to the browser, unlike the account-wide API key, so it's fine that it ends up in the client's `iceServers` config).
+2. Set `METERED_TURN_USERNAME` and `METERED_TURN_CREDENTIAL` in `server/.env`.
+3. Restart the server. The client automatically fetches the `iceServers` array via `turnController.js` before starting a call, and falls back to STUN-only if they're unset.
+
+Any TURN provider (or a self-hosted [coturn](https://github.com/coturn/coturn)) can be substituted by changing what `turnController.js` returns — the client only cares that it gets back an `iceServers` array.
+
 ## Admin Portal
 
 Every user has a `role` (`USER` by default, or `ADMIN`) on the `User` model. A logged-in admin sees an **Admin** button in the header, which opens a screen listing every user and every room, with actions to promote/demote a user, or delete a user or room.
