@@ -4,12 +4,13 @@ const http = require("http");
 const { Server } = require("socket.io");
 
 const app = require("./app");
+const corsOrigins = require("./config/corsOrigins");
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: true,
+    origin: corsOrigins,
     methods: ["GET", "POST"],
   },
 });
